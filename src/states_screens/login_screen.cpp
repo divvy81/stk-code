@@ -29,10 +29,14 @@
 #include "states_screens/online_screen.hpp"
 #include "states_screens/register_screen.hpp"
 #include "states_screens/state_manager.hpp"
+#include "states_screens/dialogs/recovery_dialog.hpp"
 #include "utils/log.hpp"
 #include "utils/translation.hpp"
 
+#include <irrString.h>
+
 using namespace GUIEngine;
+using namespace irr;
 
 DEFINE_SCREEN_SINGLETON( LoginScreen );
 
@@ -76,9 +80,9 @@ void LoginScreen::login()
     info_widget->setDefaultColor();
     info_widget->setText("", false);
 
-    const stringw username = getWidget<TextBoxWidget>("username")
+    const core::stringw username = getWidget<TextBoxWidget>("username")
                             ->getText().trim();
-    const stringw password = getWidget<TextBoxWidget>("password")
+    const core::stringw password = getWidget<TextBoxWidget>("password")
                             ->getText().trim();
 
     if (username.size() < 4 || username.size() > 30 || 
@@ -171,6 +175,7 @@ void LoginScreen::eventCallback(Widget* widget, const std::string& name,
         }
         else if(button=="recovery")
         {
+            new RecoveryDialog();
         }
         else if(button=="cancel")
             StateManager::get()->escapePressed();

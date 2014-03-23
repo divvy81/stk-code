@@ -28,27 +28,24 @@ using namespace irr;
 #include <map>
 #include <vector>
 
-
-class Challenge;
 class ChallengeData;
+class ChallengeStatus;
 class UTFWriter;
 class XMLNode;
 
 const int CHALLENGE_POINTS[] = { 8, 9, 10 };
 
-/**
+/** This class contains the progression through challenges for the story mode.
+ *  It maintains a list of all challenges in a mapping of challenge id to
+ *  an instance of ChallengeStatus. Each ChallengeStatus stores at which level
+ *  a challenge was solved.
+ *  This object also keeps track of the overall points a player has.
  * \ingroup challenges
- * This class contains the progression through challenges for one game slot
  */
 
-class GameSlot
+class StoryModeStatus
 {
-    /** Profile names can change, so rather than try to make sure all renames
-     *  are done everywhere, assign a unique ID to each profiler.
-     *  Will save much headaches.
-     */
-    unsigned int m_player_unique_id;
-
+private:
     /** Contains whether each feature of the challenge is locked or unlocked */
     std::map<std::string, bool>   m_locked_features;
 
@@ -56,13 +53,11 @@ class GameSlot
       * until they are shown to the user) */
     std::vector<const ChallengeData*> m_unlocked_features;
 
-    std::map<std::string, Challenge*> m_challenges_state;
+    std::map<std::string, ChallengeStatus*> m_challenges_state;
 
     /** A pointer to the current challenge, or NULL
      *  if no challenge is active. */
-    const Challenge *m_current_challenge;
-
-    friend class UnlockManager;
+    const ChallengeStatus *m_current_challenge;
 
     int m_points;
 
@@ -75,17 +70,18 @@ class GameSlot
 
 public:
 
-     GameSlot(const XMLNode *node=NULL);
-    ~GameSlot();
+     StoryModeStatus(const XMLNode *node=NULL);
+    ~StoryModeStatus();
 
     void computeActive();
     bool       isLocked          (const std::string& feature);
-    void       lockFeature       (Challenge *challenge);
-    void       unlockFeature     (Challenge* c, RaceManager::Difficulty d,
+    void       lockFeature       (ChallengeStatus *challenge);
+    void       unlockFeature     (ChallengeStatus* c, RaceManager::Difficulty d,
                                   bool do_save=true);
     void       raceFinished      ();
     void       grandPrixFinished ();
     void       save              (UTFWriter &out);
+    void       addStatus(ChallengeStatus *cs);
     void       setCurrentChallenge(const std::string &challenge_id);
 
     // ------------------------------------------------------------------------
@@ -115,17 +111,20 @@ public:
     /** Returns if this is the first time the intro is shown. */
     bool       isFirstTime() const   { return m_first_time; }
     // ------------------------------------------------------------------------
-    const Challenge *getCurrentChallenge() const { return m_current_challenge; }
+    const ChallengeStatus *getCurrentChallengeStatus() const 
+    {
+        return m_current_challenge; 
+    }   // getCurrentChallengeStatus
     // ------------------------------------------------------------------------
     /** Returns a challenge given the challenge id.
      */
-    const Challenge* getChallenge(const std::string& id) const
+    const ChallengeStatus* getChallengeStatus(const std::string& id) const
     {
-        std::map<std::string, Challenge*>::const_iterator it =
+        std::map<std::string, ChallengeStatus*>::const_iterator it =
             m_challenges_state.find(id);
         assert(it!=m_challenges_state.end());
         return it->second;
-    }   // getChallenge
-};   // GameSlot
+    }   // getChallengeStatus
+};   // StoryModeStatus
 
 #endif

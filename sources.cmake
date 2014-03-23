@@ -3,7 +3,7 @@ set(STK_SOURCES
 src/achievements/achievement.cpp
 src/achievements/achievement_info.cpp
 src/achievements/achievements_manager.cpp
-src/achievements/achievements_slot.cpp
+src/achievements/achievements_status.cpp
 src/addons/addon.cpp
 src/addons/addons_manager.cpp
 src/addons/news_manager.cpp
@@ -17,9 +17,9 @@ src/audio/music_ogg.cpp
 src/audio/sfx_buffer.cpp
 src/audio/sfx_manager.cpp
 src/audio/sfx_openal.cpp
-src/challenges/challenge.cpp
 src/challenges/challenge_data.cpp
-src/challenges/game_slot.cpp
+src/challenges/challenge_status.cpp
+src/challenges/story_mode_status.cpp
 src/challenges/unlock_manager.cpp
 src/config/device_config.cpp
 src/config/player_manager.cpp
@@ -64,6 +64,7 @@ src/graphics/stars.cpp
 src/graphics/stkanimatedmesh.cpp
 src/graphics/stkbillboard.cpp
 src/graphics/stkmesh.cpp
+src/graphics/stkmeshscenenode.cpp
 src/graphics/sun.cpp
 src/graphics/water.cpp
 src/graphics/wind.cpp
@@ -193,7 +194,7 @@ src/network/types.cpp
 src/online/current_user.cpp
 src/online/http_request.cpp
 src/online/messages.cpp
-src/online/profile.cpp
+src/online/online_profile.cpp
 src/online/profile_manager.cpp
 src/online/request.cpp
 src/online/request_manager.cpp
@@ -226,6 +227,7 @@ src/states_screens/dialogs/addons_loading.cpp
 src/states_screens/dialogs/change_password_dialog.cpp
 src/states_screens/dialogs/confirm_resolution_dialog.cpp
 src/states_screens/dialogs/custom_video_settings.cpp
+src/states_screens/dialogs/enter_gp_name_dialog.cpp
 src/states_screens/dialogs/enter_player_name_dialog.cpp
 src/states_screens/dialogs/gp_info_dialog.cpp
 src/states_screens/dialogs/message_dialog.cpp
@@ -242,7 +244,10 @@ src/states_screens/dialogs/tutorial_message_dialog.cpp
 src/states_screens/dialogs/user_info_dialog.cpp
 src/states_screens/dialogs/vote_dialog.cpp
 src/states_screens/easter_egg_screen.cpp
+src/states_screens/edit_gp_screen.cpp
+src/states_screens/edit_track_screen.cpp
 src/states_screens/feature_unlocked.cpp
+src/states_screens/grand_prix_editor_screen.cpp
 src/states_screens/grand_prix_lose.cpp
 src/states_screens/grand_prix_win.cpp
 src/states_screens/guest_login_screen.cpp
@@ -328,7 +333,7 @@ set(STK_HEADERS
 src/achievements/achievement.hpp
 src/achievements/achievement_info.hpp
 src/achievements/achievements_manager.hpp
-src/achievements/achievements_slot.hpp
+src/achievements/achievements_status.hpp
 src/addons/addon.hpp
 src/addons/addons_manager.hpp
 src/addons/news_manager.hpp
@@ -346,9 +351,9 @@ src/audio/sfx_base.hpp
 src/audio/sfx_buffer.hpp
 src/audio/sfx_manager.hpp
 src/audio/sfx_openal.hpp
-src/challenges/challenge.hpp
 src/challenges/challenge_data.hpp
-src/challenges/game_slot.hpp
+src/challenges/challenge_status.hpp
+src/challenges/story_mode_status.hpp
 src/challenges/unlock_manager.hpp
 src/config/device_config.hpp
 src/config/player_manager.hpp
@@ -395,6 +400,7 @@ src/graphics/stars.hpp
 src/graphics/stkanimatedmesh.hpp
 src/graphics/stkbillboard.hpp
 src/graphics/stkmesh.hpp
+src/graphics/stkmeshscenenode.hpp
 src/graphics/sun.hpp
 src/graphics/water.hpp
 src/graphics/wind.hpp
@@ -525,7 +531,7 @@ src/network/types.hpp
 src/online/current_user.hpp
 src/online/http_request.hpp
 src/online/messages.hpp
-src/online/profile.hpp
+src/online/online_profile.hpp
 src/online/profile_manager.hpp
 src/online/request.hpp
 src/online/request_manager.hpp
@@ -561,6 +567,7 @@ src/states_screens/dialogs/addons_loading.hpp
 src/states_screens/dialogs/change_password_dialog.hpp
 src/states_screens/dialogs/confirm_resolution_dialog.hpp
 src/states_screens/dialogs/custom_video_settings.hpp
+src/states_screens/dialogs/enter_gp_name_dialog.hpp
 src/states_screens/dialogs/enter_player_name_dialog.hpp
 src/states_screens/dialogs/gp_info_dialog.hpp
 src/states_screens/dialogs/message_dialog.hpp
@@ -577,7 +584,10 @@ src/states_screens/dialogs/tutorial_message_dialog.hpp
 src/states_screens/dialogs/user_info_dialog.hpp
 src/states_screens/dialogs/vote_dialog.hpp
 src/states_screens/easter_egg_screen.hpp
+src/states_screens/edit_gp_screen.hpp
+src/states_screens/edit_track_screen.hpp
 src/states_screens/feature_unlocked.hpp
+src/states_screens/grand_prix_editor_screen.hpp
 src/states_screens/grand_prix_lose.hpp
 src/states_screens/grand_prix_win.hpp
 src/states_screens/guest_login_screen.hpp

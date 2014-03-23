@@ -28,12 +28,15 @@
 
 #include "utils/translation.hpp"
 
+class Track;
+
 /** Simple class that hold the data relevant to a 'grand_prix', aka. a number
   * of races that has to be completed one after the other
   * \ingroup race
   */
 class GrandPrixData
 {
+private:
     /** The name of the grand prix. */
     irr::core::stringw m_name;
 
@@ -63,25 +66,49 @@ class GrandPrixData
     /** Whether the track in question should be done in reverse mode */
     std::vector<bool> m_reversed;
 
+    /** Wether the user can edit this grand prix or not */
+    bool m_editable;
+
     bool isTrackAvailable(const std::string &id) const;
+
 public:
 
     /** Load the GrandPrixData from the given filename */
 #if (defined(WIN32) || defined(_WIN32)) && !defined(__MINGW32__)
 #pragma warning(disable:4290)
 #endif
-                       GrandPrixData  (const std::string filename) throw(std::logic_error);
+                       GrandPrixData  (const std::string& filename) throw(std::logic_error);
                        GrandPrixData  ()       {}; // empty for initialising
 
-    bool checkConsistency(bool chatty=true) const;
+    void setId(const std::string& id);
+    void setName(const irr::core::stringw& name);
+    void setFilename(const std::string& filename);
+    void setEditable(const bool editable);
+    void reload();
+    bool writeToFile();
+
+    bool                            checkConsistency(bool chatty=true) const;
     const std::vector<std::string>& getTrackNames() const;
-    void getLaps(std::vector<int> *laps) const;
-    void getReverse(std::vector<bool> *reverse) const;
+    void                            getLaps(std::vector<int> *laps) const;
+    void                            getReverse(std::vector<bool> *reverse) const;
+    bool                            isEditable() const;
+    unsigned int                    getNumberOfTracks() const;
+    const std::string&              getTrackId(const unsigned int track) const;
+    irr::core::stringw              getTrackName(const unsigned int track) const;
+    unsigned int                    getLaps(const unsigned int track) const;
+    bool                            getReverse(const unsigned int track) const;
+    void                            moveUp(const unsigned int track);
+    void                            moveDown(const unsigned int track);
+    void                            addTrack(Track* track, unsigned int laps,
+                                             bool reverse, int position=-1);
+    void                            editTrack(unsigned int t, Track* track,
+                                              unsigned int laps, bool reverse);
+    void                            remove(const unsigned int track);
 
     // ------------------------------------------------------------------------
     /** @return the (potentially translated) user-visible name of the Grand
      *  Prix (apply fribidi as needed) */
-    const irr::core::stringw getName() const { return _LTR(m_name.c_str());    }
+    irr::core::stringw getName() const { return _LTR(m_name.c_str());    }
 
     // ------------------------------------------------------------------------
     /** @return the internal name identifier of the Grand Prix (not translated) */

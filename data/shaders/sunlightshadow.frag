@@ -1,4 +1,3 @@
-#version 330
 uniform sampler2D ntex;
 uniform sampler2D dtex;
 uniform sampler2DArrayShadow shadowtex;
@@ -13,25 +12,29 @@ uniform mat4 shadowmat[4];
 //uniform vec2 wind;
 //uniform float shadowoffset;
 
+#if __VERSION__ >= 130
 in vec2 uv;
 out vec4 Diff;
 out vec4 Spec;
+#else
+varying vec2 uv;
+#define Diff gl_FragData[0]
+#define Spec gl_FragData[1]
+#endif
 
-vec3 DecodeNormal(vec2 n)
-{
-  float z = dot(n, n) * 2. - 1.;
-  vec2 xy = normalize(n) * sqrt(1. - z * z);
-  return vec3(xy,z);
-}
+
+vec3 DecodeNormal(vec2 n);
 
 float getShadowFactor(vec3 pos, float bias, int index)
 {
-	const vec2 shadowoffset[] = {
+  //float a[5] = float[](3.4, 4.2, 5.0, 5.2, 1.1);
+  
+	vec2 shadowoffset[4] = vec2[](
 		vec2(-1., -1.),
 		vec2(-1., 1.),
 		vec2(1., -1.),
 		vec2(1., 1.)
-	};
+	);
 
 	vec4 shadowcoord = (shadowmat[index] * vec4(pos, 1.0));
 	shadowcoord /= shadowcoord.w;

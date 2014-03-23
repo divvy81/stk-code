@@ -1,4 +1,3 @@
-#version 330
 uniform sampler2D ntex;
 uniform sampler2D dtex;
 //uniform sampler2D cloudtex;
@@ -9,16 +8,18 @@ uniform mat4 invproj;
 //uniform int hasclouds;
 //uniform vec2 wind;
 
+#if __VERSION__ >= 130
 in vec2 uv;
 out vec4 Diff;
 out vec4 Spec;
+#else
+varying vec2 uv;
+#define Diff gl_FragData[0]
+#define Spec gl_FragData[1]
+#endif
 
-vec3 DecodeNormal(vec2 n)
-{
-  float z = dot(n, n) * 2. - 1.;
-  vec2 xy = normalize(n) * sqrt(1. - z * z);
-  return vec3(xy,z);
-}
+
+vec3 DecodeNormal(vec2 n);
 
 void main() {
 	float z = texture(dtex, uv).x;

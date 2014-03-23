@@ -39,16 +39,13 @@ using namespace irr::video;
 SpinnerWidget::SpinnerWidget(const bool gauge) : Widget(WTYPE_SPINNER)
 {
     m_gauge = gauge;
-
     m_listener = NULL;
     m_graphical = false;
     m_check_inside_me = true; //FIXME: not sure this is necessary
     m_supports_multiplayer = true;
     m_value = -1;
-    m_backgroundcolor=0;
-//    background_color_image="glass_square.jpg";
+    m_use_background_color=false;
     m_spinner_widget_player_id=-1;
-
     m_min = 0;
     m_max = 999;
 }
@@ -110,10 +107,9 @@ void SpinnerWidget::add()
     rect<s32> widget_size = rect<s32>(m_x, m_y, m_x + m_w, m_y + m_h);
     IGUIButton * btn = GUIEngine::getGUIEnv()->addButton(widget_size, m_parent, widgetID, L"");
     m_element = btn;
-    
+
     m_element->setTabOrder( m_element->getID() );
 
-	
     // left arrow
     rect<s32> subsize_left_arrow = rect<s32>(0 ,0, m_h, m_h);
     IGUIButton * left_arrow = GUIEngine::getGUIEnv()->addButton(subsize_left_arrow, btn, getNewNoFocusID(), L" ");
@@ -122,9 +118,9 @@ void SpinnerWidget::add()
     m_children[0].m_event_handler = this;
     m_children[0].m_properties[PROP_ID] = "left";
     m_children[0].m_id = m_children[0].m_element->getID();
-    
+
     m_badge_x_shift = subsize_left_arrow.getWidth();
-//    setBackgroundColor(); // setting background
+
     // label
     if (m_graphical)
     {
@@ -166,7 +162,7 @@ void SpinnerWidget::add()
         }
 	
     }
-   
+
 
     // right arrow
     rect<s32> subsize_right_arrow = rect<s32>(m_w - m_h, 0, m_w, m_h);
@@ -182,25 +178,8 @@ void SpinnerWidget::add()
 
     setValue(m_value);
 }
-void SpinnerWidget::setBackgroundColor()
-{
-	
-	m_backgroundcolor=1;
-}
-int SpinnerWidget::getBackgroundColor()
-{
-	return m_backgroundcolor;
-}
-void SpinnerWidget::setSpinnerWidgetPlayerID(int playerID)
-{
-	
-	m_spinner_widget_player_id=playerID;
-	printf("spinnerwidgetplayerid=%d",m_spinner_widget_player_id);
-}
-int SpinnerWidget::getSpinnerWidgetPlayerID()
-{
-	return m_spinner_widget_player_id;
-}
+// -----------------------------------------------------------------------------
+
 ITexture* SpinnerWidget::getTexture()
 {
     assert(m_graphical);
@@ -387,8 +366,6 @@ stringw SpinnerWidget::getStringValue() const
     /** To avoid compiler warnings about missing return statements. */
     return "";
 }
-
-
 
 // -----------------------------------------------------------------------------
 

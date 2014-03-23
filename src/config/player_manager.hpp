@@ -19,6 +19,9 @@
 #ifndef HEADER_PLAYER_MANAGER_HPP
 #define HEADER_PLAYER_MANAGER_HPP
 
+#include "achievements/achievement.hpp"
+#include "achievements/achievements_status.hpp"
+#include "config/player_profile.hpp"
 #include "utils/no_copy.hpp"
 #include "utils/ptr_vector.hpp"
 
@@ -26,9 +29,14 @@
 
 #include <cstddef>  // NULL
 
+class AchievementsStatus;
 class PlayerProfile;
 
-/** A special class that manages all local player accounts.
+/** A special class that manages all local player accounts. It reads all player
+ *  accounts from the players.xml file in the user config directory. It also
+ *  keeps track of the currently logged in player. For each player an instance
+ *  of PlayerProfile is created, which keeps track of story mode progress,
+ *  achievements and other data.
  */
 class PlayerManager : public NoCopy
 {
@@ -68,8 +76,9 @@ public:
     void addDefaultPlayer();
     void addNewPlayer(const irr::core::stringw& name);
     void deletePlayer(PlayerProfile *player);
-    void setCurrentPlayer(PlayerProfile *player);
+    void setCurrentPlayer(PlayerProfile *player, bool remember_me);
     const PlayerProfile *getPlayerById(unsigned int id);
+    void enforceCurrentPlayer();
     // ------------------------------------------------------------------------
     /** Returns the current player. */
     PlayerProfile* getCurrentPlayer() { return m_current_player; }
@@ -87,6 +96,25 @@ public:
     // ------------------------------------------------------------------------
     /** Returns a player with a given unique id. */
     PlayerProfile *getPlayer(unsigned int n)  { return &m_all_players[n];}
+    // ------------------------------------------------------------------------
+    /** A handy shortcut funtion. */
+    static AchievementsStatus* getCurrentAchievementsStatus()
+    {
+        return get()->getCurrentPlayer()->getAchievementsStatus();
+    }   // getCurrentAchievementsStatus
+    // ------------------------------------------------------------------------
+    /** A handy shortcut to increase points for an achievement key of the
+     *  current player. */
+    static void increaseAchievement(unsigned int index, const std::string &key,
+                                    int increase = 1)
+    {
+        Achievement *a = getCurrentAchievementsStatus()->getAchievement(index);
+        if (!a)
+        {
+            Log::fatal("PlayerManager", "Achievement '%d' not found.", index);
+        }
+        a->increase(key, increase);
+    }   // increaseAchievement
     // ------------------------------------------------------------------------
 };   // PlayerManager
 

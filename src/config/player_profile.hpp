@@ -16,12 +16,10 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#ifndef HEADER_PLAYER_HPP
-#define HEADER_PLAYER_HPP
+#ifndef HEADER_PLAYER_PROFILE_HPP
+#define HEADER_PLAYER_PROFILE_HPP
 
-#include "challenges/game_slot.hpp"
-
-#include "config/user_config.hpp"
+#include "challenges/story_mode_status.hpp"
 #include "utils/no_copy.hpp"
 #include "utils/types.hpp"
 
@@ -30,15 +28,16 @@ using namespace irr;
 
 #include <string>
 
-class GameSlot;
 class UTFWriter;
+class AchievementsStatus;
 
-/**
-  * \brief Class for managing player profiles (name, control configuration, etc.)
-  * A list of all possible players is stored as PlayerProfiles in the user config.
-  * A list of currently playing players will be stored somewhere else (FIXME : complete comment)
-  * \ingroup config
-  */
+/** Class for managing player profiles (name, usage frequency, 
+ *  etc.). All PlayerProfiles are managed by the PlayerManager.
+ *  A PlayerProfile keeps track of the story mode progress using an instance
+ *  of StoryModeStatus, and achievements with AchievementsStatus. All data
+ *  is saved in the players.xml file.
+ * \ingroup config
+ */
 class PlayerProfile : public NoCopy
 {
 private:
@@ -64,7 +63,9 @@ private:
     bool m_is_default;
 
     /** The complete challenge state. */
-    GameSlot *m_game_slot;
+    StoryModeStatus *m_story_mode_status;
+
+    AchievementsStatus *m_achievements_status;
 
 public:
 
@@ -76,7 +77,7 @@ public:
     void incrementUseFrequency();
     bool operator<(const PlayerProfile &other);
     bool operator>(const PlayerProfile &other);
-
+    void raceFinished();
 
     // ------------------------------------------------------------------------
     ~PlayerProfile()
@@ -129,65 +130,66 @@ public:
     /** Returnes if the feature (kart, track) is locked. */
     bool isLocked(const std::string &feature) const
     {
-        return m_game_slot->isLocked(feature); 
+        return m_story_mode_status->isLocked(feature); 
     }   // isLocked
     // ------------------------------------------------------------------------
     /** Returns all active challenges. */
-    void computeActive() { m_game_slot->computeActive(); }
+    void computeActive() { m_story_mode_status->computeActive(); }
     // ------------------------------------------------------------------------
     /** Returns the list of recently completed challenges. */
     std::vector<const ChallengeData*> getRecentlyCompletedChallenges() 
     {
-        return m_game_slot->getRecentlyCompletedChallenges();
+        return m_story_mode_status->getRecentlyCompletedChallenges();
     }   // getRecently Completed Challenges
     // ------------------------------------------------------------------------
     /** Sets the currently active challenge. */
     void setCurrentChallenge(const std::string &name)
     {
-        m_game_slot->setCurrentChallenge(name);
+        m_story_mode_status->setCurrentChallenge(name);
     }   // setCurrentChallenge
-    // ------------------------------------------------------------------------
-    /** Notification of a finished race, which can trigger fulfilling 
-     *  challenges. */
-    void raceFinished() { m_game_slot->raceFinished(); }
     // ------------------------------------------------------------------------
     /** Callback when a GP is finished (to test if a challenge was
      *  fulfilled). */
-    void grandPrixFinished() { m_game_slot->grandPrixFinished(); }
+    void grandPrixFinished() { m_story_mode_status->grandPrixFinished(); }
     // ------------------------------------------------------------------------
-    unsigned int getPoints() const { return m_game_slot->getPoints(); }
+    unsigned int getPoints() const { return m_story_mode_status->getPoints(); }
     // ------------------------------------------------------------------------
-    void setFirstTime(bool b) { m_game_slot->setFirstTime(b); }
+    void setFirstTime(bool b) { m_story_mode_status->setFirstTime(b); }
     // ------------------------------------------------------------------------
-    bool isFirstTime() const { return m_game_slot->isFirstTime(); }
+    bool isFirstTime() const { return m_story_mode_status->isFirstTime(); }
     // ------------------------------------------------------------------------
-    void clearUnlocked() { m_game_slot->clearUnlocked(); }
+    void clearUnlocked() { m_story_mode_status->clearUnlocked(); }
     // ------------------------------------------------------------------------
     /** Returns the current challenge for this player. */
-    const Challenge* getCurrentChallenge() const
+    const ChallengeStatus* getCurrentChallengeStatus() const
     {
-        return m_game_slot->getCurrentChallenge();
-    }   // getCurrentChallenge
+        return m_story_mode_status->getCurrentChallengeStatus();
+    }   // getCurrentChallengeStatus
     // ------------------------------------------------------------------------
-    const Challenge* getChallenge(const std::string &id)
+    const ChallengeStatus* getChallengeStatus(const std::string &id)
     {
-        return m_game_slot->getChallenge(id);
-    }   // getChallenge
+        return m_story_mode_status->getChallengeStatus(id);
+    }   // getChallengeStatus
     // ------------------------------------------------------------------------
     unsigned int getNumEasyTrophies() const
     {
-        return m_game_slot->getNumEasyTrophies(); 
+        return m_story_mode_status->getNumEasyTrophies(); 
     }   // getNumEasyTrophies
     // ------------------------------------------------------------------------
     unsigned int getNumMediumTrophies() const
     {
-        return m_game_slot->getNumMediumTrophies();
+        return m_story_mode_status->getNumMediumTrophies();
     }   // getNumEasyTrophies
     // -----------------------------------------------------------------------
     unsigned int getNumHardTrophies() const
     {
-        return m_game_slot->getNumHardTrophies(); 
+        return m_story_mode_status->getNumHardTrophies(); 
     }   // getNumHardTropies
+    // ------------------------------------------------------------------------
+    AchievementsStatus* getAchievementsStatus() 
+    {
+        return m_achievements_status;
+    }   // getAchievementsStatus
 
 };   // class PlayerProfile
 

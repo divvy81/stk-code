@@ -82,6 +82,7 @@ enum STKRenderingPass
 class IrrDriver : public IEventReceiver, public NoCopy
 {
 private:
+    int GLMajorVersion, GLMinorVersion;
     /** The irrlicht device. */
     IrrlichtDevice             *m_device;
     /** Irrlicht scene manager. */
@@ -116,6 +117,11 @@ private:
 
 	std::vector<video::ITexture *> SkyboxTextures;
 
+    float blueSHCoeff[9];
+    float greenSHCoeff[9];
+    float redSHCoeff[9];
+
+
     /** Flag to indicate if a resolution change is pending (which will be
      *  acted upon in the next update). None means no change, yes means
      *  change to new resolution and trigger confirmation dialog.
@@ -125,6 +131,7 @@ private:
           RES_CHANGE_CANCEL}                m_resolution_changing;
 
 public:
+    GLuint SkyboxCubeMap, ConvolutedSkyboxCubeMap;
     /** A simple class to store video resolutions. */
     class VideoMode
     {
@@ -141,6 +148,16 @@ public:
         scene::ISceneNode * node;
         float power;
     };
+
+    unsigned getGLSLVersion() const
+    {
+        if (GLMajorVersion > 3 || (GLMajorVersion == 3 && GLMinorVersion == 3))
+            return GLMajorVersion * 100 + GLMinorVersion * 10;
+        else if (GLMajorVersion == 3)
+            return 100 + (GLMinorVersion + 3) * 10;
+        else
+            return 120;
+    }
 
 private:
     std::vector<VideoMode> m_modes;
@@ -171,7 +188,8 @@ private:
 	unsigned             object_count[PASS_COUNT];
     u32                  m_renderpass;
     u32                  m_lensflare_query;
-    scene::IMeshSceneNode *m_sun_interposer;
+    bool                 m_query_issued;
+    class STKMeshSceneNode *m_sun_interposer;
     scene::CLensFlareSceneNode *m_lensflare;
     scene::ICameraSceneNode *m_suncam;
 
@@ -190,7 +208,7 @@ private:
 
     std::vector<scene::ISceneNode *> m_background;
 
-	STKRenderingPass phase;
+	STKRenderingPass m_phase;
 
 #ifdef DEBUG
     /** Used to visualise skeletons. */
@@ -212,7 +230,6 @@ private:
                     std::vector<GlowData>& glows,
                     const core::aabbox3df& cambox,
                     int cam);
-	void renderSkybox();
     void renderLights(const core::aabbox3df& cambox,
                       scene::ICameraSceneNode * const camnode,
                       video::SOverrideMaterial &overridemat,
@@ -225,6 +242,8 @@ public:
         ~IrrDriver();
     void initDevice();
     void reset();
+    void generateSkyboxCubemap();
+    void renderSkybox();
 	void setPhase(STKRenderingPass);
 	STKRenderingPass getPhase() const;
     const std::vector<core::matrix4> &getShadowViewProj() const
@@ -495,7 +514,7 @@ public:
     // ------------------------------------------------------------------------
     void clearLights();
     // ------------------------------------------------------------------------
-    scene::IMeshSceneNode *getSunInterposer() { return m_sun_interposer; }
+    class STKMeshSceneNode *getSunInterposer() { return m_sun_interposer; }
     // ------------------------------------------------------------------------
     void setViewMatrix(core::matrix4 matrix) { m_ViewMatrix = matrix; matrix.getInverse(m_InvViewMatrix); }
     const core::matrix4 &getViewMatrix() const { return m_ViewMatrix; }

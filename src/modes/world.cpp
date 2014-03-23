@@ -18,7 +18,7 @@
 
 #include "modes/world.hpp"
 
-#include "achievements/achievements_manager.hpp"
+#include "achievements/achievement_info.hpp"
 #include "audio/music_manager.hpp"
 #include "audio/sfx_base.hpp"
 #include "audio/sfx_manager.hpp"
@@ -443,12 +443,75 @@ void World::terminateRace()
     {
         updateHighscores(&best_highscore_rank, &best_finish_time, &highscore_who,
                      &best_player);
-        PlayerManager::get()->getCurrentPlayer()->raceFinished();
     }
 
+    // Check achievements
+    PlayerManager::increaseAchievement(AchievementInfo::ACHIEVE_COLUMBUS,
+                                       getTrack()->getIdent(), 1);
+    if (raceHasLaps())
+    {
+        PlayerManager::increaseAchievement(AchievementInfo::ACHIEVE_MARATHONER,
+                                           "laps", race_manager->getNumLaps());
+    }
+    
+    Achievement *achiev = PlayerManager::getCurrentAchievementsStatus()->getAchievement(AchievementInfo::ACHIEVE_GOLD_DRIVER);
+    if (achiev)
+    {
+        std::string mode_name = getIdent(); // Get the race mode name
+        int winner_position = 1;
+        int opponents = achiev->getInfo()->getGoalValue("opponents"); // Get the required opponents number
+        if (mode_name == IDENT_FTL)
+        {
+            winner_position = 2;
+            opponents++;
+        }
+        for(unsigned int i = 0; i < kart_amount; i++)
+        {
+            // Retrieve the current player
+            StateManager::ActivePlayer* p = m_karts[i]->getController()->getPlayer();
+            if (p && p->getConstProfile() == PlayerManager::get()->getCurrentPlayer())
+            {
+                // Check if the player has won
+                if (m_karts[i]->getPosition() == winner_position && kart_amount > opponents )
+                {
+                    // Update the achievement
+                    mode_name = StringUtils::toLowerCase(mode_name);
+                    if (achiev->getValue("opponents") <= 0)
+                        PlayerManager::increaseAchievement(AchievementInfo::ACHIEVE_GOLD_DRIVER,
+                                                            "opponents", opponents);
+                    PlayerManager::increaseAchievement(AchievementInfo::ACHIEVE_GOLD_DRIVER,
+                                                        mode_name, 1);
+                }
+            }
+	    } // for i < kart_amount
+    } // if (achiev)
+    
+    Achievement *win = PlayerManager::getCurrentAchievementsStatus()->getAchievement(AchievementInfo::ACHIEVE_UNSTOPPABLE);
+    //if achivement has been unlocked
+    if (win->getValue("wins") < 5 )
+    {
+        for(unsigned int i = 0; i < kart_amount; i++)
+        {
+            // Retrieve the current player
+            StateManager::ActivePlayer* p = m_karts[i]->getController()->getPlayer();
+            if (p && p->getConstProfile() == PlayerManager::get()->getCurrentPlayer())
+            {
+                // Check if the player has won
+                if (m_karts[i]->getPosition() == 1 )
+                {
+                    // Increase number of consecutive wins
+                       PlayerManager::increaseAchievement(AchievementInfo::ACHIEVE_UNSTOPPABLE,
+                                                            "wins", 1);
+                }
+                else
+                {     
+                      //Set number of consecutive wins to 0
+                      win->reset();
+                }
+            }
+         }
+    }
     PlayerManager::get()->getCurrentPlayer()->raceFinished();
-    ((MapAchievement *) AchievementsManager::get()->getActive()->getAchievement(1))->increase(getTrack()->getIdent(), 1);
-    AchievementsManager::get()->onRaceEnd();
 
     if (m_race_gui) m_race_gui->clearAllMessages();
     // we can't delete the race gui here, since it is needed in case of

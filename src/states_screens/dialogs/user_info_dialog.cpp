@@ -17,15 +17,17 @@
 
 #include "states_screens/dialogs/user_info_dialog.hpp"
 
-#include <IGUIEnvironment.h>
-
 #include "audio/sfx_manager.hpp"
+#include "guiengine/dialog_queue.hpp"
 #include "guiengine/engine.hpp"
-#include "states_screens/state_manager.hpp"
-#include "states_screens/online_profile_overview.hpp"
-#include "utils/translation.hpp"
+#include "online/online_profile.hpp"
 #include "online/messages.hpp"
+#include "states_screens/online_profile_friends.hpp"
+#include "states_screens/online_profile_overview.hpp"
+#include "states_screens/state_manager.hpp"
+#include "utils/translation.hpp"
 
+#include <IGUIEnvironment.h>
 
 using namespace GUIEngine;
 using namespace irr;
@@ -56,6 +58,11 @@ void UserInfoDialog::load()
 void UserInfoDialog::beforeAddingWidgets()
 {
     m_profile = ProfileManager::get()->getProfileByID(m_showing_id);
+
+    // Avoid a crash in case that an invalid m_showing_id is given
+    // (which can only happen if there's a problem on the server).
+    if (!m_profile)
+        m_profile = CurrentUser::get()->getProfile();
     m_self_destroy = false;
     m_enter_profile = false;
     m_processing = false;
@@ -93,7 +100,7 @@ void UserInfoDialog::beforeAddingWidgets()
         m_remove_widget->setVisible(true);
     }
 
-    Profile::RelationInfo * relation_info = m_profile->getRelationInfo();
+    OnlineProfile::RelationInfo * relation_info = m_profile->getRelationInfo();
     if(relation_info != NULL)
     {
         if(relation_info->isPending())
@@ -121,6 +128,175 @@ UserInfoDialog::~UserInfoDialog()
 }
 
 // -----------------------------------------------------------------------------
+/** Sends a friend request to the server. When the request is finished, it
+ *  show a dialog with the result of this request.
+ */
+void UserInfoDialog::sendFriendRequest()
+{
+    class FriendRequest : public XMLRequest
+    {
+        // ------------------------------------------------------------------------
+        /** Callback for the request to send a friend invitation. Shows a
+         *  confirmation message and takes care of updating all the cached
+         *  information.
+         */
+        virtual void callback()
+        {
+            uint32_t id(0);
+            getXMLData()->get("friendid", &id);
+            core::stringw info_text("");
+            if (isSuccess())
+            {
+                CurrentUser::get()->getProfile()->addFriend(id);
+                OnlineProfile::RelationInfo *info =
+                             new OnlineProfile::RelationInfo(_("Today"), false,
+                                                             true, false);
+                ProfileManager::get()->getProfileByID(id)->setRelationInfo(info);
+                OnlineProfileFriends::getInstance()->refreshFriendsList();
+                info_text = _("Friend request send!");
+            }
+            else
+                info_text = getInfo();
+            UserInfoDialog *dialog = new UserInfoDialog(id, info_text,
+                                                       !isSuccess(), true);
+            GUIEngine::DialogQueue::get()->pushDialog(dialog, true);
+
+        }   // callback
+    public:
+        FriendRequest() : XMLRequest(true) {}
+    };   // FriendRequest
+
+    // ------------------------------------------------------------------------
+
+    FriendRequest *request = new FriendRequest();
+    CurrentUser::setUserDetails(request);
+    request->addParameter("action", "friend-request");
+    request->addParameter("friendid", m_profile->getID());
+    request->queue();
+
+    m_processing = true;
+    m_options_widget->setDeactivated();
+
+}   // sendFriendRequest
+
+// ----------------------------------------------------------------------------
+/** Sends an AcceptFriend request to the server. It will show a popup
+ *  menu with the result once the request has been processed.
+ */
+void UserInfoDialog::acceptFriendRequest()
+{
+    // ----------------------------------------------------------------
+    class AcceptFriendRequest : public XMLRequest
+    {    
+        /** Callback for the request to accept a friend invitation. Shows a
+        *  confirmation message and takes care of updating all the cached
+        *  information.
+        */
+        virtual void callback()
+        {
+            uint32_t id(0);
+            getXMLData()->get("friendid", &id);
+            core::stringw info_text("");
+            if (isSuccess())
+            {
+                OnlineProfile * profile = 
+                                     ProfileManager::get()->getProfileByID(id);
+                profile->setFriend();
+                OnlineProfile::RelationInfo *info =
+                             new OnlineProfile::RelationInfo(_("Today"), false,
+                                                             false, true);
+                profile->setRelationInfo(info);
+                OnlineProfileFriends::getInstance()->refreshFriendsList();
+                info_text = _("Friend request accepted!");
+            }
+            else
+                info_text = getInfo();
+            GUIEngine::DialogQueue::get()->pushDialog(
+                new UserInfoDialog(id, info_text, !isSuccess(), true), true);
+
+        }   // callback
+    public:
+        AcceptFriendRequest() : XMLRequest(true) {}
+    };   // AcceptFriendRequest
+    // ------------------------------------------------------------------------
+
+    AcceptFriendRequest *request = new AcceptFriendRequest();
+    CurrentUser::setUserDetails(request);
+    request->addParameter("action", "accept-friend-request");
+    request->addParameter("friendid", m_profile->getID());
+    request->queue();
+    m_processing = true;
+    m_options_widget->setDeactivated();
+}   // acceptFriendRequest
+
+// -----------------------------------------------------------------------------
+/** A request to the server, to decline a friend request.
+ *  \param friend_id The id of the user of which the request has to be
+ *         declined.
+ */
+void UserInfoDialog::declineFriendRequest()
+{
+    // ----------------------------------------------------------------
+    class DeclineFriendRequest : public XMLRequest
+    {
+        /** A request to the server, to cancel a pending friend request.
+         *  \param friend_id The id of the user of which the request has to be
+         *  canceled.
+         */
+        virtual void callback()
+        {
+            uint32_t id(0);
+            getXMLData()->get("friendid", &id);
+            core::stringw info_text("");
+            if (isSuccess())
+            {
+                CurrentUser::get()->getProfile()->removeFriend(id);
+                ProfileManager::get()->moveToCache(id);
+                ProfileManager::get()->getProfileByID(id)
+                                     ->deleteRelationalInfo();
+                OnlineProfileFriends::getInstance()->refreshFriendsList();
+                info_text = _("Friend request declined!");
+            }
+            else
+                info_text = getInfo();
+            GUIEngine::DialogQueue::get()->pushDialog(
+                                new UserInfoDialog(id, info_text, !isSuccess(),
+                                                   true), true);
+        }   // callback
+    public:
+        DeclineFriendRequest() : XMLRequest(true) {}
+    };   // DeclineFriendRequest
+    // ----------------------------------------------------------------
+    DeclineFriendRequest *request = new DeclineFriendRequest();
+    CurrentUser::setUserDetails(request);
+    request->addParameter("action", "decline-friend-request");
+    request->addParameter("friendid", m_profile->getID());
+    request->queue();
+
+    m_processing = true;
+    m_options_widget->setDeactivated();
+
+}   // declineFriendRequest
+
+// -----------------------------------------------------------------------------
+/** Removes an existing friend.
+ */
+void UserInfoDialog::removeExistingFriend()
+{
+    CurrentUser::get()->requestRemoveFriend(m_profile->getID());
+
+}   // removeExistingFriend
+
+// -----------------------------------------------------------------------------
+/** Removes a pending friend request.
+ */
+void UserInfoDialog::removePendingFriend()
+{
+    CurrentUser::get()->requestCancelFriend(m_profile->getID());
+
+}   // removePendingFriend
+
+// -----------------------------------------------------------------------------
 GUIEngine::EventPropagation UserInfoDialog::processEvent(const std::string& eventSource)
 {
 
@@ -141,33 +317,29 @@ GUIEngine::EventPropagation UserInfoDialog::processEvent(const std::string& even
         }
         else if(selection == m_friend_widget->m_properties[PROP_ID])
         {
-            CurrentUser::get()->requestFriendRequest(m_profile->getID());
-            m_processing = true;
-            m_options_widget->setDeactivated();
+            sendFriendRequest();
             return GUIEngine::EVENT_BLOCK;
         }
         else if(selection == m_remove_widget->m_properties[PROP_ID])
         {
-            if(m_profile->getRelationInfo()->isPending())
-                CurrentUser::get()->requestCancelFriend(m_profile->getID());
+            if (m_profile->getRelationInfo() && 
+                m_profile->getRelationInfo()->isPending() )
+                removePendingFriend();
             else
-                CurrentUser::get()->requestRemoveFriend(m_profile->getID());
+                removeExistingFriend();
+
             m_processing = true;
             m_options_widget->setDeactivated();
             return GUIEngine::EVENT_BLOCK;
         }
         else if(selection == m_accept_widget->m_properties[PROP_ID])
         {
-            CurrentUser::get()->requestAcceptFriend(m_profile->getID());
-            m_processing = true;
-            m_options_widget->setDeactivated();
+            acceptFriendRequest();
             return GUIEngine::EVENT_BLOCK;
         }
         else if(selection == m_decline_widget->m_properties[PROP_ID])
         {
-            CurrentUser::get()->requestDeclineFriend(m_profile->getID());
-            m_processing = true;
-            m_options_widget->setDeactivated();
+            declineFriendRequest();
             return GUIEngine::EVENT_BLOCK;
         }
     }
