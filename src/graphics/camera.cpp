@@ -314,7 +314,6 @@ void Camera::setInitialTransform()
 void Camera::smoothMoveCamera(float dt)
 {
     
-    //float rotate_camera_for_steering =m_kart->getSteerPercent()*m_kart->getMaxSteerAngle();
     core::vector3df current_position  =  m_camera->getPosition();
     // Smoothly interpolate towards the position and target
     const KartProperties *kp=m_kart->getKartProperties();
@@ -325,7 +324,7 @@ void Camera::smoothMoveCamera(float dt)
     float steer=m_kart->getSteerPercent();
     const Skidding *ks=m_kart->getSkidding();
     float skid_factor=ks->getVisualSkidRotation();
-    //printf("steer=%f skid= %f\n",steer,skid);//(-1 or 1)
+
     float skid_angle = asin(skid_factor);
     float ratio = (current_speed - max_speed_without_zipper)/max_increase_with_zipper;
     ratio = ratio > -0.12 ? ratio : -0.12;
@@ -499,12 +498,8 @@ void Camera::update(float dt)
 
         // Aim at the usual same position of the kart (i.e. slightly
         // above the kart).
-        //core::vector3df wanted_target(m_kart->getXYZ().toIrrVector()
-        //                              +core::vector3df(0, above_kart, 0) );
-        //core::vector3df current_target   = m_camera->getTarget();
         // Note: this code is replicated from smoothMoveCamera so that
         // the camera keeps on pointing to the same spot.
-        //current_target += ((wanted_target-current_target)*m_target_speed)*dt;
         core::vector3df current_target   = (m_kart->getXYZ().toIrrVector()+core::vector3df(0, above_kart, 0));
         m_camera->setTarget(current_target);
     }
